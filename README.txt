@@ -1,3 +1,21 @@
+
+Some Important Commands:
+
+1. Start debugger: os.debug = True
+2. run in virtual environment: source venv/bin/activate
+3. For deactivate: deactivate
+4. Trace line by line:  import pdb; pdb.set_trace()     #On the console use n=>next, c=>continue.
+5. Generate secret key
+    python3
+    import os
+    os.urandom(24)
+
+6. Start Mysql: mysql-ctl start
+    Root User: vishalgupta812
+    Database Name: c9
+7. Mysql interface: mysql-ctl cli
+8. Install pymysql: pip install -r requirements.txt
+
 1. Drop all the tables:
     python manage.py shell
     from flask_blog import db
