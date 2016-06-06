@@ -15,6 +15,15 @@ Some Important Commands:
     Database Name: c9
 7. Mysql interface: mysql-ctl cli
 8. Install pymysql: pip install -r requirements.txt
+9. python manage.py shell:
+>>> from author.models import *
+>>> from blog.models import *
+>>> blog = Blog.query.first()
+>>> author = Author.query.first()
+>>> category = Category.query.first()
+>>> post  = Post(blog, author, 'Python is cool', 'Pyhthon is interesting.', category)
+>>> db.session.add(post)
+>>> db.session.commit()
 
 1. Drop all the tables:
     python manage.py shell
