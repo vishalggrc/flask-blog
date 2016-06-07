@@ -1,7 +1,7 @@
 from flask_blog import app
-from flask import render_template, redirect, url_for, flash, session, abort
+from flask import render_template, redirect, url_for, flash, session, abort, request
 from blog.form import SetupForm, PostForm
-from flask_blog import db
+from flask_blog import db, uploaded_images
 from author.models import Author
 from blog.models import Blog, Category, Post
 from author.decorators import login_required, author_required
@@ -15,7 +15,7 @@ POSTS_PER_PAGE = 3
 @app.route('/index/<int:page>')
 def index(page=1):
     blog = Blog.query.first()
-    posts = Post.query.order_by(Post.publish_date.desc()).paginate(page, POSTS_PER_PAGE, False) #False:show empty list if not exist, True: Show 404 page if not exist
+    posts = Post.query.filter_by(live=True).order_by(Post.publish_date.desc()).paginate(page, POSTS_PER_PAGE, False) #False:show empty list if not exist, True: Show 404 page if not exist
     return render_template('blog/index.html', blog=blog, posts=posts)
     
 @app.route('/admin')
@@ -24,7 +24,7 @@ def index(page=1):
 @author_required
 def admin(page=1):
     if session.get('is_author'):
-        posts = Post.query.order_by(Post.publish_date.desc()).paginate(page, POSTS_PER_PAGE, False)
+        posts = Post.query.filter_by(live=True).order_by(Post.publish_date.desc()).paginate(page, POSTS_PER_PAGE, False)
         return render_template('blog/admin.html', posts=posts)
     else:
         abort(403)
@@ -72,6 +72,12 @@ def post():
     form = PostForm()
     error = ''
     if form.validate_on_submit():
+        image = request.files.get('image')
+        filename = None
+        try:
+            filename = uploaded_images.save(image)
+        except:
+            flash('File not uploaded')
         if form.new_category.data:
             new_category  = Category(form.new_category.data)
             db.session.add(new_category)
@@ -91,6 +97,7 @@ def post():
             form.title.data,
             form.body.data,
             category,
+            filename,
             slug
             )
         db.session.add(post)
@@ -109,3 +116,41 @@ def post():
 def article(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
     return render_template('blog/article.html', post=post)
+    
+@app.route('/edit/<int:post_id>', methods=['GET','POST'])
+@author_required
+def edit(post_id):
+    post = Post.query.filter_by(id=post_id).first_or_404()
+    form = PostForm(obj=post)
+    error = ''
+    if form.validate_on_submit():
+        original_image = post.image
+        form.populate_obj(post)
+        if form.image.has_file():
+            image = request.files.get('image')
+            filename = None
+            try:
+                filename = uploaded_images.save(image)
+            except:
+                flash('File not uploaded')
+            if filename:
+                post.image = filename
+        else:
+            post.image = original_image
+        if form.new_category.data:
+            new_category  = Category(form.new_category.data)
+            db.session.add(new_category)
+            db.session.flush()
+            post.category = new_category
+        db.session.commit()
+        return redirect(url_for('article', slug=post.slug))
+    return render_template('blog/post.html', form=form, post=post, action='edit')
+    
+@app.route('/delete/<int:post_id>')
+@author_required
+def delete(post_id):
+    post = Post.query.filter_by(id=post_id).first_or_404()
+    post.live = False
+    db.session.commit()
+    flash("Article deleted!!!")
+    return redirect(url_for('index'))
