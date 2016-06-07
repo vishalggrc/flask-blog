@@ -24,6 +24,7 @@ class Post(db.Model):
     publish_date = db.Column(db.DateTime)
     live = db.Column(db.Boolean)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    category = db.relationship('Category', backref=db.backref('posts', lazy='dynamic'))
     
     def __init__(self, blog, author, title, body, category, slug=None, publish_date=None, live=True):
         self.blog_id = blog.id
@@ -49,5 +50,5 @@ class Category(db.Model):
         self.name = name
         
     def __repr__(self):
-        return '<Category %r>' % self.name    
+        return self.name    
         
