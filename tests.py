@@ -59,7 +59,6 @@ class UserTest(unittest.TestCase):
     
     def test_create_blog(self):
         rv = self.create_blog()
-        #print (rv.data)
         assert 'Blog created' in str(rv.data)
         
     def test_login_logout(self):
